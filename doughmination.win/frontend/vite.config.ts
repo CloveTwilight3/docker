@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',  // Listen on all network interfaces
       port: 8001,       // The port the UI runs on
       // Add this line to allow your domain
-      allowedHosts: ['localhost', '127.0.0.1', 'doughmination.win', 'www.doughmination.win'],
+      allowedHosts: ['localhost', '127.0.0.1', 'doughmination.win', 'www.doughmination.win', '.loca.lt' ],
       proxy: {
         // Proxy API requests to backend during development
         '/api': {

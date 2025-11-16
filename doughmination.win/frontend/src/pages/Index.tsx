@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import ThemeToggle from '@/components/ThemeToggle';
 import useTheme from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
+import MemberStatus from '@/components/MemberStatus';
 
 // Define interfaces for type safety
 interface Member {
@@ -21,6 +22,11 @@ interface Member {
   _cofrontDisplayName?: string;
   component_avatars?: string[];
   component_members?: Member[];
+  status?: {
+    text: string;
+    emoji?: string;
+    updated_at: string;
+  } | null;
 }
 
 interface Fronting {
@@ -528,7 +534,23 @@ export default function Index() {
                           </h2>
                           <div className="flex flex-wrap gap-4 justify-center">
                             {expandedMembers.map((member, index) => (
-                              <div key={member.id || `${member.name}-${index}`} className="flex flex-col items-center">
+                              <div key={member.id || `${member.name}-${index}`} className="flex flex-col items-center relative">
+                                {/* Status Bubble - Thought Bubble Style */}
+                                {member.status && (
+                                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+                                    <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[140px]">
+                                      <div className="flex items-center gap-1.5">
+                                        {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
+                                        <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
+                                      </div>
+                                      {/* Thought bubble circles */}
+                                      <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
+                                        <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
+                                        <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                                 <Link to={`/${member.name}`}>
                                   <div className="relative">
                                     <img
@@ -647,23 +669,41 @@ export default function Index() {
                 
                 {/* Members Grid */}
                 {filteredMembers.length > 0 ? (
-                  <div className="member-grid">
+                  <div className="member-grid" style={{ paddingTop: '3rem' }}>
                     {filteredMembers
                       .filter(member => !member.is_private && !member.is_cofront && !member.is_special)
                       .map((member) => {
                         const isFronting = isMemberFronting(member.id, member.name);
                         return (
-                          <div key={member.id} className={`member-grid-item ${isFronting ? 'fronting-glow' : ''}`}>
+                          <div key={member.id} className={`member-grid-item ${isFronting ? 'fronting-glow' : ''} relative`}>
+                            {/* Status Bubble - Thought Bubble Style */}
+                            {member.status && (
+                              <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-20">
+                                <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[130px]">
+                                  <div className="flex items-center gap-1.5">
+                                    {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
+                                    <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
+                                  </div>
+                                  {/* Thought bubble circles */}
+                                  <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
+                                    <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
+                                    <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                             <Link to={`/${member.name}`}>
                               <div className="text-center">
-                                <img 
-                                  src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'} 
-                                  alt={member.display_name || member.name}
-                                  className="w-16 h-16 mx-auto rounded-full object-cover mb-2 border-2 border-border"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
-                                  }}
-                                />
+                                <div className="relative inline-block">
+                                  <img 
+                                    src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'} 
+                                    alt={member.display_name || member.name}
+                                    className="w-16 h-16 mx-auto rounded-full object-cover mb-2 border-2 border-border"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
+                                    }}
+                                  />
+                                </div>
                                 <h3 className="font-comic font-semibold text-sm text-card-foreground">
                                   {member.display_name || member.name}
                                 </h3>
@@ -672,6 +712,7 @@ export default function Index() {
                                     {member.pronouns}
                                   </p>
                                 )}
+                                
                                 {member.tags && member.tags.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-2 justify-center">
                                     {member.tags.slice(0, 2).map((tag, index) => (
