@@ -16,12 +16,7 @@ HEADERS = {
 
 # Cofront/fusion member definitions - up to 5 members
 # Values can be lists of 2-5 member names
-COFRONTS = {
-    # Existing cofronts
-    "huntrix": ["Rumi", "Zoey", "Mira"],
-    "saja": ["baby", "jinu", "mystery", "romance", "abby"],
-    "Clothena": ["Clove", "Athena"]
-}
+COFRONTS = {}
 
 # Max number of members allowed in a cofront (enforced in set_front function)
 MAX_FRONTERS = 6

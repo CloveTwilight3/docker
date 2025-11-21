@@ -13,81 +13,72 @@ MEMBER_TAGS_FILE = DATA_DIR / "member_tags.json"
 DATA_DIR.mkdir(exist_ok=True)
 
 # Default sub-systems configuration
-DEFAULT_SUBSYSTEMS = [
-    {
-        "name": "HUNTR/X", 
-        "label": "huntrix",
-        "color": "#FF69B4",  # Hot pink
-        "description": "All huntrix members"
-    },
-    {
-        "name": "Saja Boys", 
-        "label": "saja",
-        "color": "#FF4655",  # Hot red
-        "description": "All the saja boys"
-    },
-    {
-        "name": "Fictives",
-        "label": "fictives",
-        "color": "#D420E0",
-        "description": "All fictives that are not catagorized"
-    },
-    {
-        "name": "Fortnite",
-        "label": "fortnite",
-        "color": "#0CB296",
-        "description": "All fortnite people"
-    }
-]
+DEFAULT_SUBSYSTEMS = []
 
 # Default member tag assignments
 DEFAULT_MEMBER_TAGS = {
-    "Anby": ["fictives"],
-    "Astra": ["fictives", "valorant"],
-    "Belle": ["fictives"],
-    "C1": ["host"],
-    "C2": ["fictives", "valorant"],
-    "Cypher": ["fictives", "valorant"],
-    "Deadlock": ["fictives", "valorant"],
-    "Fade": ["fictives", "valorant"],
-    "Jett": ["fictives", "valorant"],
-    "Jinx": ["fictives"],
-    "JS": ["fictives"],
-    "Judy": ["fictives"],
-    "kj": ["fictives", "valorant"],
-    "Neon": ["fictives", "valorant"],
-    "Raze": ["fictives", "valorant"],
-    "Reyna": ["fictives", "valorant"],
-    "Sage": ["fictives", "valorant"],
-    "Tracer": ["fictives"],
-    "V": ["fictives"],
-    "Vi": ["fictives"],
-    "Viper": ["fictives", "valorant"],
-    "02": ["fictives"],
-    "Vyse": ["fictives", "valorant"],
-    "baby": ["saja", "fictives"],
-    "abby": ["saja", "fictives"],
-    "jinu": ["saja", "fictives"],
-    "mystery": ["saja", "fictives"],
-    "romance": ["saja", "fictives"],
-    "Rumi": ["huntrix", "fictives"],
-    "Zoey": ["huntrix", "fictives"],
-    "Mira": ["huntrix", "fictives"],
-    "Bobby": ["huntrix", "fictives"],
-    "HMiku": ["fictives"],
-    "cmiku": ["fictives"],
-    "SMiku": ["fictives"],
-    "Hope": ["fortnite", "fictives"],
-    "Catrin": ["fortnite", "fictives"],
-    "D.Va": ["fictives"],
-    "Marin": ["fictives"],
-    "Dashie": ["fictives"],
-    "Meg": ["fictives", "fortnite"],
-    "Oynx": ["cat"],
-    "Pyzer": ["cat"],
-    "Pyzen": ["cat"],
-    "Roxy": ["fictives"],
+    "Jinx": ["Arcane"],
+    "V": ["Arcane"],
+
+    "Onyx": ["Cat"],
+    "Pyzer": ["Cat"],
+    "Pyzen": ["Cat"],
+
+    "JS": ["Cyberpunk"],
+    "Vi": ["Cyberpunk"],
+    "Judy": ["Cyberpunk"],
+
+    "Marin": ["DUD"],
+
+    "Roxy": ["FNAF"],
+
+    "Catrin": ["Fortnite"],
+    "Hope": ["Fortnite"],
+    "Meg": ["Fortnite"],
+
+    "02": ["Franxx"],
+
+    "C1": ["Host"],
+    "Cleo": ["Host"],
+    "Cwove": ["Host"],
+
+    "abby": ["KPDH"],
+    "baby": ["KPDH"],
+    "Bobby": ["KPDH"],
+    "jinu": ["KPDH"],
+    "Mira": ["KPDH"],
+    "mystery": ["KPDH"],
+    "romance": ["KPDH"],
+    "Rumi": ["KPDH"],
+    "Zoey": ["KPDH"],
+
+    "Dashie": ["MLP"],
+
+    "D.Va": ["Overwatch"],
+    "Tracer": ["Overwatch"],
+
+    "Astra": ["Valorant"],
+    "C2": ["Valorant"],
+    "Cypher": ["Valorant"],
+    "Deadlock": ["Valorant"],
+    "Fade": ["Valorant"],
+    "Jett": ["Valorant"],
+    "KJ": ["Valorant"],
+    "Neon": ["Valorant"],
+    "Raze": ["Valorant"],
+    "Reyna": ["Valorant"],
+    "Sage": ["Valorant"],
+    "Viper": ["Valorant"],
+    "Vyse": ["Valorant"],
+
+    "CMiku": ["Vocaloids"],
+    "HMiku": ["Vocaloids"],
+    "SMiku": ["Vocaloids"],
+
+    "Anby": ["ZZZ"],
+    "Belle": ["ZZZ"]
 }
+
 
 def get_subsystems() -> List[SubSystem]:
     """Get all defined sub-systems"""
