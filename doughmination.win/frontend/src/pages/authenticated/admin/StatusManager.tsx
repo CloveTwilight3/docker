@@ -68,7 +68,6 @@ export default function StatusManager() {
       if (response.ok) {
         const data = await response.json();
         const regularMembers = data
-          .filter((m: Member) => !m.is_cofront && !m.is_special)
           .sort((a: Member, b: Member) =>
             (a.display_name || a.name).toLowerCase()
               .localeCompare((b.display_name || b.name).toLowerCase())
@@ -218,7 +217,6 @@ export default function StatusManager() {
               <div className="space-y-2">
                 <Label htmlFor="member-select" className="font-comic">Select Member</Label>
 
-                {/* ⭐ FIXED: Added name="member" here */}
                 <Select
                   name="member"
                   value={selectedMember}
@@ -293,7 +291,7 @@ export default function StatusManager() {
                       <Input
                         id="statusText"
                         type="text"
-                        name="statusText"    // optional, but helps autofill
+                        name="statusText"
                         value={statusText}
                         onChange={(e) => setStatusText(e.target.value)}
                         placeholder="What's happening?"
