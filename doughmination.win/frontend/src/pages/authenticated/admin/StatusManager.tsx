@@ -230,13 +230,14 @@ export default function StatusManager() {
                     {members.map((member) => (
                       <SelectItem key={member.id} value={member.name} className="font-comic">
                         <div className="flex items-center gap-2">
-                          {member.avatar_url && (
-                            <img 
-                              src={member.avatar_url}
-                              alt={member.display_name || member.name}
-                              className="w-6 h-6 rounded-full object-cover"
-                            />
-                          )}
+                          <img 
+                            src={member.avatar_url && member.avatar_url.trim() !== '' ? member.avatar_url : 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
+                            alt={member.display_name || member.name}
+                            className="w-6 h-6 rounded-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
+                            }}
+                          />
                           <span>{member.display_name || member.name}</span>
                           {member.status && (
                             <span className="text-xs text-muted-foreground">(has status)</span>
@@ -368,13 +369,14 @@ export default function StatusManager() {
                     onClick={() => setSelectedMember(member.name)}
                     className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border hover:border-primary transition-colors cursor-pointer"
                   >
-                    {member.avatar_url && (
-                      <img
-                        src={member.avatar_url}
-                        alt={member.display_name || member.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    )}
+                    <img
+                      src={member.avatar_url && member.avatar_url.trim() !== '' ? member.avatar_url : 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
+                      alt={member.display_name || member.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
+                      }}
+                    />
 
                     <div className="flex-1 min-w-0">
                       <p className="font-comic font-semibold text-sm">
