@@ -2,9 +2,6 @@
 # IMPORTS
 # ============================================================================
 import os
-import base64
-
-import httpx
 import shutil
 import aiofiles
 import uuid
@@ -12,12 +9,10 @@ import json
 import asyncio
 import re
 import weakref
-
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Set, Dict, Any
-from PIL import Image
-from io import BytesIO
+
 from fastapi import FastAPI, HTTPException, Request, Depends, Security, status, File, UploadFile, WebSocket, WebSocketDisconnect, Body
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, Response, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -1207,83 +1202,55 @@ async def serve_root():
 # ============================================================================
 @app.get("/{member_name}")
 async def serve_member_page(member_name: str, request: Request):
-    """Serve member page with dynamic meta tags + inline center-cropped avatar"""
-
+    """Serve member page with dynamic meta tags for crawlers"""
+    
     # Skip non-member routes
-    skip_routes = ['api', 'admin', 'assets', 'avatars', 'favicon.ico',
+    skip_routes = ['api', 'admin', 'assets', 'avatars', 'favicon.ico', 
                    'robots.txt', 'sitemap.xml', 'ws', 'fonts']
     if any(member_name.startswith(route) for route in skip_routes):
         raise HTTPException(status_code=404)
-
-    # Hex normalization helper
+    
+    # Hex normalization helper (compatible with Python < 3.10)
     def normalize_hex(color: Optional[str], default: str = "#FF69B4") -> str:
+        # Require a string input
         if not isinstance(color, str) or not color:
             return default
         c = color.lstrip("#")
         if len(c) == 6 and all(ch in "0123456789abcdefABCDEF" for ch in c):
             return f"#{c.upper()}"
         return default
-
-    # Helper: fetch + center crop + resize avatar
-    async def process_avatar(url: str, size: int = 400) -> str:
-        try:
-            async with httpx.AsyncClient() as client:
-                r = await client.get(url)
-            r.raise_for_status()
-        except Exception:
-            # On failure, use fallback avatar
-            async with httpx.AsyncClient() as client:
-                r = await client.get("https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png")
-            r.raise_for_status()
-
-        img = Image.open(BytesIO(r.content)).convert("RGBA")
-        w, h = img.size
-        min_side = min(w, h)
-
-        # Center crop
-        left = (w - min_side) // 2
-        top = (h - min_side) // 2
-        cropped = img.crop((left, top, left + min_side, top + min_side))
-
-        # Resize to final size
-        cropped = cropped.resize((size, size), Image.LANCZOS)
-
-        # Encode to base64 PNG
-        buf = BytesIO()
-        cropped.save(buf, format="PNG")
-        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-        return f"data:image/png;base64,{b64}"
-
+    
     try:
-        # Fetch member list
         members = await get_members()
-        member = next((m for m in members if m.get("name", "").lower() == member_name.lower()), None)
-
+        member = None
+        
+        for m in members:
+            if m.get("name", "").lower() == member_name.lower():
+                member = m
+                break
+        
         if not member:
             return FileResponse(STATIC_DIR / "index.html")
 
-        raw_color = member.get("color") or "#FF69B4"
+        raw_color = member.get("color") or "#FF69B4" # Default to hot pink
         color = normalize_hex(raw_color)
-        pronouns = member.get("pronouns") or "they/them"
+        pronouns = member.get("pronouns") or f"they/them"
         display_name = member.get("display_name") or member.get("name")
-        description = member.get("description") or "Member of the Doughmination System®"
-        avatar_source_url = member.get("avatar_url") or "https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png"
-
-        # Create base64 center-cropped avatar
-        avatar_url = await process_avatar(avatar_source_url)
-
-        # Escape meta data
+        description = member.get("description") or f"Member of the Doughmination System®"
+        avatar_url = member.get("avatar_url") or "https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png"
+        
+        # Escape
         color = color.replace('"', '&quot;')
         pronouns = pronouns.replace('"', '&quot;')
         display_name = display_name.replace('"', '&quot;')
         description = description.replace('"', '&quot;')
-
-        # Load built frontend index.html
+        
+        # Read index.html from where your frontend is built
+        # You'll need to copy the built frontend to the backend container
         index_path = STATIC_DIR / "index.html"
         with open(index_path, "r", encoding="utf-8") as f:
             html_content = f.read()
-
-        # Build new <head> section
+        
         meta_head = f"""
 <head>
     <meta charset="UTF-8" />
@@ -1316,16 +1283,16 @@ async def serve_member_page(member_name: str, request: Request):
 </head>
 """
 
-        # Replace original <head> with dynamic one
+        
         html_content = re.sub(
-            r"<head>.*?</head>",
-            meta_head,
-            html_content,
-            flags=re.DOTALL
-        )
-
+    r"<head>.*?</head>",
+    meta_head,
+    html_content,
+    flags=re.DOTALL
+)
+        
         return HTMLResponse(content=html_content)
-
+        
     except Exception as e:
         print(f"Error: {e}")
         return FileResponse(STATIC_DIR / "index.html")
