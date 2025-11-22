@@ -142,9 +142,33 @@ if STATIC_DIR.exists():
 
 @app.get("/robots.txt")
 async def robots_txt():
-    """Serve robots.txt"""
-    robots_content = """User-agent: *
+    """Serve enhanced robots.txt"""
+    robots_content = """# Doughmination System® - Robots.txt
+User-agent: *
 Allow: /
+Crawl-delay: 1
+
+# Allow specific bots
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
 
 # Block common exploit attempts
 Disallow: /vendor/
@@ -154,24 +178,87 @@ Disallow: /onvif/
 Disallow: /PSIA/
 Disallow: /index.php
 Disallow: /eval-stdin.php
+Disallow: /api/
+Disallow: /admin/
+Disallow: /ws
 
+# Sitemap
 Sitemap: https://www.doughmination.win/sitemap.xml
 """
     return Response(content=robots_content, media_type="text/plain")
 
 @app.get("/sitemap.xml")
 async def sitemap_xml():
-    """Serve sitemap.xml"""
-    sitemap_content = """<?xml version="1.0" encoding="UTF-8"?>
+    """Generate dynamic sitemap with all member pages"""
+    try:
+        # Fetch all members
+        members = await get_members()
+        
+        # Start sitemap XML
+        sitemap = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <!-- Homepage -->
+  <url>
+    <loc>https://www.doughmination.win/</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Admin/Login Pages -->
+  <url>
+    <loc>https://www.doughmination.win/admin/login</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+""".format(today=datetime.now(timezone.utc).strftime('%Y-%m-%d'))
+        
+        # Add each member page
+        for member in members:
+            member_name = member.get('name', '').replace(' ', '%20')
+            avatar_url = member.get('avatar_url', '')
+            
+            sitemap += f"""  <!-- Member: {member.get('display_name') or member.get('name')} -->
+  <url>
+    <loc>https://www.doughmination.win/{member_name}</loc>
+    <lastmod>{datetime.now(timezone.utc).strftime('%Y-%m-%d')}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>"""
+            
+            # Add image if available
+            if avatar_url:
+                sitemap += f"""
+    <image:image>
+      <image:loc>{avatar_url}</image:loc>
+      <image:title>{member.get('display_name') or member.get('name')}</image:title>
+    </image:image>"""
+            
+            sitemap += """
+  </url>
+"""
+        
+        # Close sitemap
+        sitemap += "</urlset>"
+        
+        return Response(content=sitemap, media_type="application/xml")
+        
+    except Exception as e:
+        print(f"Error generating sitemap: {e}")
+        # Fallback to basic sitemap
+        return Response(
+            content=f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.doughmination.win/</loc>
-    <lastmod>2025-06-13</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>{datetime.now(timezone.utc).strftime('%Y-%m-%d')}</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
-</urlset>"""
-    return Response(content=sitemap_content, media_type="application/xml")
+</urlset>""",
+            media_type="application/xml"
+        )
 
 @app.get("/favicon.ico")
 async def favicon():
@@ -1036,7 +1123,7 @@ async def serve_root():
 # ============================================================================
 @app.get("/{member_name}")
 async def serve_member_page(member_name: str, request: Request):
-    """Serve member page with dynamic meta tags for crawlers"""
+    """Serve member page with dynamic meta tags for crawlers and enhanced SEO"""
     
     # Skip non-member routes
     skip_routes = ['api', 'admin', 'assets', 'avatars', 'favicon.ico', 
@@ -1054,6 +1141,18 @@ async def serve_member_page(member_name: str, request: Request):
             return f"#{c.upper()}"
         return default
     
+    # HTML escape helper
+    def escape_html(text: str) -> str:
+        """Escape HTML special characters"""
+        if not text:
+            return ""
+        return (text
+                .replace('&', '&amp;')
+                .replace('<', '&lt;')
+                .replace('>', '&gt;')
+                .replace('"', '&quot;')
+                .replace("'", '&#x27;'))
+    
     try:
         members = await get_members()
         member = None
@@ -1066,31 +1165,67 @@ async def serve_member_page(member_name: str, request: Request):
         if not member:
             return FileResponse(STATIC_DIR / "index.html")
 
-        raw_color = member.get("color") or "#FF69B4" # Default to hot pink
+        # Extract and prepare member data
+        raw_color = member.get("color") or "#FF69B4"
         color = normalize_hex(raw_color)
-        pronouns = member.get("pronouns") or f"they/them"
-        display_name = member.get("display_name") or member.get("name")
-        description = member.get("description") or f"Member of the Doughmination System®"
+        pronouns = escape_html(member.get("pronouns") or "they/them")
+        display_name = escape_html(member.get("display_name") or member.get("name"))
+        raw_description = member.get("description") or f"Member of the Doughmination System®"
+        description = escape_html(raw_description)
         avatar_url = member.get("avatar_url") or "https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png"
+        member_id = member.get("id", "")
         
-        # Escape
-        color = color.replace('"', '&quot;')
-        pronouns = pronouns.replace('"', '&quot;')
-        display_name = display_name.replace('"', '&quot;')
-        description = description.replace('"', '&quot;')
+        # Prepare tags for keywords
+        tags = member.get("tags", [])
+        tags_text = ", ".join(tags) if tags else ""
         
-        # Read index.html from where your frontend is built
-        # You'll need to copy the built frontend to the backend container
+        # Build keywords meta tag
+        keywords = f"plural system, {display_name}, system member, Doughmination System, {pronouns}, headmate, alter"
+        if tags_text:
+            keywords += f", {tags_text}"
+        
+        # Structured data for Schema.org
+        structured_data = f"""
+    <script type="application/ld+json">
+    {{
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "{display_name}",
+      "description": "{description}",
+      "image": "{avatar_url}",
+      "url": "https://www.doughmination.win/{member_name}",
+      "identifier": "{member_id}",
+      "memberOf": {{
+        "@type": "Organization",
+        "name": "Doughmination System®",
+        "url": "https://www.doughmination.win/",
+        "logo": "https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png"
+      }}
+    }}
+    </script>"""
+        
+        # Read index.html from frontend build
         index_path = STATIC_DIR / "index.html"
         with open(index_path, "r", encoding="utf-8") as f:
             html_content = f.read()
         
+        # Build enhanced meta head with SEO optimization
         meta_head = f"""
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 
-    <title>{display_name} - {pronouns}</title>
+    <!-- Page Title -->
+    <title>{display_name} ({pronouns}) | Doughmination System® Member</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{description} - Member of the Doughmination System®. Pronouns: {pronouns}" />
+    <meta name="keywords" content="{keywords}" />
+    <meta name="author" content="Doughmination System®" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.doughmination.win/{member_name}" />
 
     <!-- iOS Safari Meta Tags -->
     <meta name="apple-mobile-web-app-title" content="{display_name}" />
@@ -1098,35 +1233,68 @@ async def serve_member_page(member_name: str, request: Request):
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="{avatar_url}" />
 
-    <!-- Primary Meta Tags -->
+    <!-- Theme Color -->
+    <meta name="theme-color" content="{color}" />
+
+    <!-- Open Graph / Discord / Facebook -->
     <meta property="og:site_name" content="Doughmination System®" />
     <meta property="og:title" content="{display_name} - {pronouns}" />
     <meta property="og:description" content="{description}" />
     <meta property="og:image" content="{avatar_url}" />
     <meta property="og:image:width" content="400" />
     <meta property="og:image:height" content="400" />
+    <meta property="og:image:alt" content="{display_name} avatar" />
     <meta property="og:type" content="profile" />
     <meta property="og:url" content="https://www.doughmination.win/{member_name}" />
-    <meta name="theme-color" content="{color}" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="profile:username" content="{member_name}" />
 
-    <!-- Twitter Meta Tags -->
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="{display_name} - {pronouns}" />
     <meta name="twitter:description" content="{description}" />
     <meta name="twitter:image" content="{avatar_url}" />
+    <meta name="twitter:image:alt" content="{display_name} avatar" />
+    
+    <!-- Structured Data (Schema.org JSON-LD) -->
+    {structured_data}
+    
+    <!-- Breadcrumb Structured Data -->
+    <script type="application/ld+json">
+    {{
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {{
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://www.doughmination.win/"
+        }},
+        {{
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{display_name}",
+          "item": "https://www.doughmination.win/{member_name}"
+        }}
+      ]
+    }}
+    </script>
 </head>
 """
-
         
+        # Replace the head section
         html_content = re.sub(
-    r"<head>.*?</head>",
-    meta_head,
-    html_content,
-    flags=re.DOTALL
-)
+            r"<head>.*?</head>",
+            meta_head,
+            html_content,
+            flags=re.DOTALL
+        )
         
         return HTMLResponse(content=html_content)
         
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error serving member page: {e}")
+        import traceback
+        traceback.print_exc()
         return FileResponse(STATIC_DIR / "index.html")

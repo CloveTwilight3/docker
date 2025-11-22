@@ -1,13 +1,24 @@
 <!doctype html>
 <html lang="en">
   <head>
-    
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
     <!-- Page Title -->
-    <title>Doughmination System®</title>
+    <title>Doughmination System® | Plural System Member Tracker & Fronting Manager</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Real-time plural system tracker for the Doughmination System®. View current fronters, system members, and track switching patterns. DID/OSDD system management made easy." />
+    <meta name="keywords" content="plural system, DID, OSDD, system tracker, fronting tracker, plural community, system members, headmates, alters, Doughmination System" />
+    <meta name="author" content="Doughmination System®" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.doughmination.win/" />
+    
+    <!-- Alternate for mobile -->
+    <link rel="alternate" media="only screen and (max-width: 640px)" href="https://www.doughmination.win/" />
   
     <!-- iOS Web App Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -18,19 +29,70 @@
     <!-- Theme Color -->
     <meta name="theme-color" content="#8b5cf6" />
 
-    <!-- Open Graph / Discord -->
-    <meta property="og:site_name" content="Butterfly Network">
-    <meta property="og:title" content="Doughmination System®" />
-    <meta property="og:description" content="View current fronters and members of the Doughmination System®." />
+    <!-- Open Graph / Discord / Facebook -->
+    <meta property="og:site_name" content="Doughmination System®">
+    <meta property="og:title" content="Doughmination System® | Plural System Tracker" />
+    <meta property="og:description" content="Real-time plural system tracker. View current fronters and members of the Doughmination System®." />
     <meta property="og:image" content="https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://www.doughmination.win" />
+    <meta property="og:url" content="https://www.doughmination.win/" />
+    <meta property="og:locale" content="en_GB" />
   
-    <!-- Twitter -->
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Doughmination System®" />
-    <meta name="twitter:description" content="View current fronters and members of the Doughmination System®." />
+    <meta name="twitter:title" content="Doughmination System® | Plural System Tracker" />
+    <meta name="twitter:description" content="Real-time plural system tracker. View current fronters and members of the Doughmination System®." />
     <meta name="twitter:image" content="https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png" />
+    <meta name="twitter:site" content="@doughmination" />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Doughmination System®",
+      "url": "https://www.doughmination.win/",
+      "description": "Real-time plural system tracker for the Doughmination System®. Track fronting members and system information.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Doughmination System®",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png"
+        }
+      },
+      "inLanguage": "en-GB",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.doughmination.win/?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
+    <!-- Additional Structured Data for Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Doughmination System®",
+      "url": "https://www.doughmination.win/",
+      "logo": "https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png",
+      "description": "A plural system (DID/OSDD) using real-time tracking and management tools.",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "General Inquiry",
+        "url": "https://www.butterfly-network.win"
+      },
+      "sameAs": [
+        "https://www.butterfly-network.win"
+      ]
+    }
+    </script>
+  </head>
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

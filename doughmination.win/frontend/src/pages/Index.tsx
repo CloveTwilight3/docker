@@ -42,7 +42,7 @@ interface UserData {
 export default function Index() {
   const [theme] = useTheme();
   const navigate = useNavigate();
-  
+
   // State management
   const [members, setMembers] = useState<Member[]>([]);
   const [fronting, setFronting] = useState<Fronting | null>(null);
@@ -68,14 +68,14 @@ export default function Index() {
       try {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws`;
-        
+
         console.log('Connecting to WebSocket:', wsUrl);
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
           console.log('WebSocket connected');
           setWsConnected(true);
-          
+
           // Send heartbeat every 30 seconds
           heartbeatInterval = setInterval(() => {
             if (ws?.readyState === WebSocket.OPEN) {
@@ -109,7 +109,7 @@ export default function Index() {
                     return nameA.localeCompare(nameB);
                   });
                   setMembers(sortedMembers);
-                  
+
                   // Update tags
                   const tags = new Set<string>();
                   sortedMembers.forEach((member: Member) => {
@@ -139,7 +139,7 @@ export default function Index() {
         ws.onclose = () => {
           console.log('WebSocket disconnected');
           setWsConnected(false);
-          
+
           if (heartbeatInterval) {
             clearInterval(heartbeatInterval);
           }
@@ -181,7 +181,7 @@ export default function Index() {
     try {
       // Check authentication status
       await checkAuthStatus();
-      
+
       // Fetch public data
       await Promise.all([
         fetchMembers(),
@@ -218,19 +218,19 @@ export default function Index() {
           Authorization: `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setLoggedIn(true);
         setIsAdmin(!!data.isAdmin);
-        
+
         // Fetch user info
         const userResponse = await fetch("/api/user_info", {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-        
+
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setCurrentUser({
@@ -256,16 +256,16 @@ export default function Index() {
       const response = await fetch("/api/members");
       if (response.ok) {
         const data = await response.json();
-        
+
         // Sort members alphabetically by display name or name
         const sortedMembers = [...data].sort((a: Member, b: Member) => {
           const nameA = (a.display_name || a.name).toLowerCase();
           const nameB = (b.display_name || b.name).toLowerCase();
           return nameA.localeCompare(nameB);
         });
-        
+
         setMembers(sortedMembers);
-        
+
         // Extract unique tags and sort alphabetically
         const tags = new Set<string>();
         sortedMembers.forEach((member: Member) => {
@@ -344,7 +344,7 @@ export default function Index() {
       if (currentTagFilter === 'untagged') {
         filtered = filtered.filter(member => !member.tags || member.tags.length === 0);
       } else {
-        filtered = filtered.filter(member => 
+        filtered = filtered.filter(member =>
           member.tags?.includes(currentTagFilter)
         );
       }
@@ -406,13 +406,13 @@ export default function Index() {
       {/* Header with navigation */}
       <header className="fixed top-0 left-0 w-full z-40 bg-card/90 backdrop-blur-sm border-b border-border theme-transition">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="text-2xl font-bold font-comic text-primary hover:text-primary/80 transition-colors"
           >
             Doughmination System®
           </Link>
-          
+
           {/* Desktop Navigation */}
           <div className="desktop-nav hidden md:flex items-center gap-3">
             {loggedIn && currentUser && (
@@ -462,9 +462,9 @@ export default function Index() {
               </Button>
             )}
           </div>
-          
+
           {/* Mobile menu button */}
-          <button 
+          <button
             className="flex md:hidden items-center justify-center p-2 rounded-md bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             onClick={toggleMenu}
             aria-label="Toggle menu"
@@ -479,11 +479,11 @@ export default function Index() {
             </svg>
           </button>
         </div>
-        
+
         {/* Mobile Navigation overlay */}
         {menuOpen && (
           <div className="mobile-menu-overlay fixed inset-0 z-30 bg-black/50 md:hidden" onClick={toggleMenu}>
-            <div 
+            <div
               className="absolute right-0 top-[61px] w-64 max-w-[80vw] h-screen shadow-lg bg-card/95 backdrop-blur-sm border-l border-border"
               onClick={(e) => e.stopPropagation()}
             >
@@ -508,7 +508,7 @@ export default function Index() {
                   <>
                     {isAdmin && (
                       <li>
-                        <Link 
+                        <Link
                           to="/admin/dashboard"
                           className="block w-full px-4 py-3 rounded-lg text-sm text-center transition-all font-comic bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
                           onClick={toggleMenu}
@@ -518,7 +518,7 @@ export default function Index() {
                       </li>
                     )}
                     <li>
-                      <Link 
+                      <Link
                         to="/admin/user"
                         className="block w-full px-4 py-3 rounded-lg text-sm text-center transition-all font-comic bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
                         onClick={toggleMenu}
@@ -540,7 +540,7 @@ export default function Index() {
                   </>
                 ) : (
                   <li>
-                    <Link 
+                    <Link
                       to="/admin/login"
                       className="block w-full px-4 py-3 rounded-lg text-sm text-center transition-all font-comic bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
                       onClick={toggleMenu}
@@ -566,8 +566,8 @@ export default function Index() {
               <div className="mt-2">
                 <h1 className="text-4xl font-bold mb-8 text-center font-comic text-primary">
                   System Members
-                </h1> 
-                
+                </h1>
+
                 {/* Mental State Banner */}
                 {systemInfo?.mental_state && (
                   <div className={`mental-state-banner ${systemInfo.mental_state.level.replace(' ', '-')} mb-6 p-4 rounded-lg`}>
@@ -592,7 +592,7 @@ export default function Index() {
                     </small>
                   </div>
                 )}
-                
+
                 {/* Currently Fronting Section */}
                 {fronting && fronting.members && fronting.members.length > 0 && (
                   <div className="mb-6 p-4 border-b border-border">
@@ -632,13 +632,13 @@ export default function Index() {
                             </div>
                           </Link>
                           <div className="mt-2 text-center max-w-[120px]">
-                            <Link 
+                            <Link
                               to={`/${member.name}`}
                               className="font-comic font-semibold text-sm text-primary hover:text-primary/80 transition-colors block"
                             >
                               {member.display_name || member.name || "Unknown"}
                             </Link>
-                            
+
                             {member.tags && member.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1 justify-center">
                                 {[...member.tags].sort((a, b) => a.localeCompare(b)).map((tag, tagIndex) => (
@@ -657,7 +657,7 @@ export default function Index() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Search and Filter */}
                 <div className="mb-6 space-y-4">
                   <div className="flex flex-wrap gap-2 justify-center">
@@ -683,7 +683,7 @@ export default function Index() {
                       Untagged
                     </button>
                   </div>
-                  
+
                   <div className="search-container">
                     <div className="relative">
                       <svg className="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -698,7 +698,7 @@ export default function Index() {
                         className="search-input"
                       />
                       {searchQuery && (
-                        <button 
+                        <button
                           onClick={clearSearch}
                           className="search-clear"
                         >
@@ -710,79 +710,79 @@ export default function Index() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Members Grid */}
                 {filteredMembers.length > 0 ? (
                   <div className="member-grid" style={{ paddingTop: '3rem' }}>
                     {filteredMembers.map((member) => {
-                        const isFronting = isMemberFronting(member.id, member.name);
-                        return (
-                          <div key={member.id} className={`member-grid-item ${isFronting ? 'fronting-glow' : ''} relative`}>
-                            {/* Status Bubble - Thought Bubble Style */}
-                            {member.status && (
-                              <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-20">
-                                <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[130px]">
-                                  <div className="flex items-center gap-1.5">
-                                    {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
-                                    <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
-                                  </div>
-                                  {/* Thought bubble circles */}
-                                  <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
-                                    <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
-                                    <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
-                                  </div>
+                      const isFronting = isMemberFronting(member.id, member.name);
+                      return (
+                        <div key={member.id} className={`member-grid-item ${isFronting ? 'fronting-glow' : ''} relative`}>
+                          {/* Status Bubble - Thought Bubble Style */}
+                          {member.status && (
+                            <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-20">
+                              <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[130px]">
+                                <div className="flex items-center gap-1.5">
+                                  {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
+                                  <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
+                                </div>
+                                {/* Thought bubble circles */}
+                                <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
+                                  <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
+                                  <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
                                 </div>
                               </div>
-                            )}
-                            <Link to={`/${member.name}`}>
-                              <div className="text-center">
-                                <div className="relative inline-block">
-                                  <img 
-                                    src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'} 
-                                    alt={member.display_name || member.name}
-                                    className="w-16 h-16 mx-auto rounded-full object-cover mb-2 border-2 border-border"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
-                                    }}
-                                  />
-                                </div>
-                                <h3 className="font-comic font-semibold text-sm text-card-foreground">
-                                  {member.display_name || member.name}
-                                </h3>
-                                {member.pronouns && (
-                                  <p className="text-xs text-muted-foreground mt-1 font-comic">
-                                    {member.pronouns}
-                                  </p>
-                                )}
-                                
-                                {member.tags && member.tags.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-2 justify-center">
-                                    {[...member.tags].sort((a, b) => a.localeCompare(b)).slice(0, 2).map((tag, index) => (
-                                      <span
-                                        key={index}
-                                        className="text-xs px-2 py-1 rounded-full font-comic bg-secondary text-secondary-foreground"
-                                      >
-                                        {tag}
-                                      </span>
-                                    ))}
-                                    {member.tags.length > 2 && (
-                                      <span className="text-xs text-muted-foreground font-comic">
-                                        +{member.tags.length - 2}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
+                            </div>
+                          )}
+                          <Link to={`/${member.name}`}>
+                            <div className="text-center">
+                              <div className="relative inline-block">
+                                <img
+                                  src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
+                                  alt={member.display_name || member.name}
+                                  className="w-16 h-16 mx-auto rounded-full object-cover mb-2 border-2 border-border"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
+                                  }}
+                                />
                               </div>
-                            </Link>
-                          </div>
-                        );
-                      })}
+                              <h3 className="font-comic font-semibold text-sm text-card-foreground">
+                                {member.display_name || member.name}
+                              </h3>
+                              {member.pronouns && (
+                                <p className="text-xs text-muted-foreground mt-1 font-comic">
+                                  {member.pronouns}
+                                </p>
+                              )}
+
+                              {member.tags && member.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2 justify-center">
+                                  {[...member.tags].sort((a, b) => a.localeCompare(b)).slice(0, 2).map((tag, index) => (
+                                    <span
+                                      key={index}
+                                      className="text-xs px-2 py-1 rounded-full font-comic bg-secondary text-secondary-foreground"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                  {member.tags.length > 2 && (
+                                    <span className="text-xs text-muted-foreground font-comic">
+                                      +{member.tags.length - 2}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </Link>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8">
                     <p className="font-comic text-lg text-muted-foreground">
-                      {searchQuery || currentTagFilter 
-                        ? 'No members found matching your criteria.' 
+                      {searchQuery || currentTagFilter
+                        ? 'No members found matching your criteria.'
                         : 'No members available.'
                       }
                     </p>
@@ -794,9 +794,9 @@ export default function Index() {
                           </Button>
                         )}
                         {currentTagFilter && (
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             onClick={() => setCurrentTagFilter(null)}
                             className="font-comic"
                           >
@@ -828,7 +828,7 @@ export default function Index() {
         </a>
         <p className="mt-4 text-sm text-muted-foreground font-comic">
           Doughmination System® is a trade mark in the United Kingdom under trademark number{' '}
-          <a 
+          <a
             href="https://www.ipo.gov.uk/t-tmj.htm/t-tmj/tm-journals/2025-039/UK00004263144.html"
             target="_blank"
             rel="noopener noreferrer"
@@ -838,6 +838,22 @@ export default function Index() {
           </a>
         </p>
       </footer>
+      {/* SEO Content Section - Hidden visually but readable by search engines */}
+      <section className="sr-only" aria-label="About Doughmination System">
+        <h1>Doughmination System® - Real-Time Plural System Tracker</h1>
+        <p>
+          Welcome to the Doughmination System®, a plural system (DID/OSDD) management platform.
+          Track current fronters, view all system members, and manage switching patterns in real-time.
+        </p>
+        <h2>Features</h2>
+        <ul>
+          <li>Real-time fronting status tracking</li>
+          <li>Comprehensive member profiles with pronouns and descriptions</li>
+          <li>Mental health state monitoring</li>
+          <li>Member tagging and categorization</li>
+          <li>Switching metrics and analytics</li>
+        </ul>
+      </section>
     </div>
   );
 }
