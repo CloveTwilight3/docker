@@ -1148,6 +1148,190 @@ async def serve_root():
 # ============================================================================
 # DYNAMIC EMBEDS ENDPOINTS
 # ============================================================================
+@app.get("/fronting")
+async def serve_fronting_page(request: Request):
+    """Serve fronting page with dynamic meta tags showing all current fronters"""
+    
+    # HTML escape helper
+    def escape_html(text: str) -> str:
+        """Escape HTML special characters"""
+        if not text:
+            return ""
+        return (text
+                .replace('&', '&amp;')
+                .replace('<', '&lt;')
+                .replace('>', '&gt;')
+                .replace('"', '&quot;')
+                .replace("'", '&#x27;'))
+    
+    # Hex normalization helper
+    def normalize_hex(color: Optional[str], default: str = "#FF69B4") -> str:
+        if not isinstance(color, str) or not color:
+            return default
+        c = color.lstrip("#")
+        if len(c) == 6 and all(ch in "0123456789abcdefABCDEF" for ch in c):
+            return f"#{c.upper()}"
+        return default
+    
+    try:
+        # Get current fronters
+        fronters_data = await get_fronters()
+        members = fronters_data.get("members", [])
+        
+        if not members:
+            # No fronters - return default page
+            return FileResponse(STATIC_DIR / "index.html")
+        
+        # Build list of fronter names
+        fronter_names = []
+        for member in members:
+            name = escape_html(member.get("display_name") or member.get("name", "Unknown"))
+            fronter_names.append(name)
+        
+        # Primary fronter (first in list) for main metadata
+        primary = members[0]
+        primary_name = escape_html(primary.get("display_name") or primary.get("name", "Unknown"))
+        primary_pronouns = escape_html(primary.get("pronouns") or "they/them")
+        primary_color = normalize_hex(primary.get("color"))
+        primary_avatar = primary.get("avatar_url") or "https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png"
+        primary_description = escape_html(
+            primary.get("description") or f"Currently fronting in the Doughmination System®"
+        )
+        
+        # Create title and description based on number of fronters
+        if len(fronter_names) == 1:
+            title = f"{primary_name} is Fronting"
+            description = f"{primary_name} ({primary_pronouns}) is currently fronting in the Doughmination System®"
+        else:
+            fronters_list = ", ".join(fronter_names[:-1]) + f" and {fronter_names[-1]}"
+            title = f"{fronters_list} are Fronting"
+            description = f"{fronters_list} are currently co-fronting in the Doughmination System®"
+        
+        # Build keywords
+        keywords = f"plural system, fronting, current fronters, Doughmination System, {', '.join(fronter_names)}"
+        
+        # Structured data for current fronters
+        members_structured = []
+        for member in members:
+            member_name = escape_html(member.get("display_name") or member.get("name", "Unknown"))
+            member_avatar = member.get("avatar_url") or "https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png"
+            member_id = member.get("id", "")
+            member_url_name = member.get("name", "").replace(" ", "%20")
+            
+            members_structured.append({
+                "@type": "Person",
+                "name": member_name,
+                "image": member_avatar,
+                "url": f"https://www.doughmination.win/{member_url_name}",
+                "identifier": member_id
+            })
+        
+        structured_data = f"""
+    <script type="application/ld+json">
+    {{
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Current Fronters",
+      "description": "{description}",
+      "itemListElement": {json.dumps(members_structured)}
+    }}
+    </script>"""
+        
+        # Read index.html
+        index_path = STATIC_DIR / "index.html"
+        with open(index_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        
+        # Build enhanced meta head
+        meta_head = f"""
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+
+    <!-- Page Title -->
+    <title>{title} | Doughmination System®</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{description}" />
+    <meta name="keywords" content="{keywords}" />
+    <meta name="author" content="Doughmination System®" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.doughmination.win/fronting" />
+
+    <!-- iOS Safari Meta Tags -->
+    <meta name="apple-mobile-web-app-title" content="Current Fronters" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" href="{primary_avatar}" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="{primary_color}" />
+
+    <!-- Open Graph / Discord / Facebook -->
+    <meta property="og:site_name" content="Doughmination System®" />
+    <meta property="og:title" content="{title}" />
+    <meta property="og:description" content="{description}" />
+    <meta property="og:image" content="{primary_avatar}" />
+    <meta property="og:image:width" content="400" />
+    <meta property="og:image:height" content="400" />
+    <meta property="og:image:alt" content="{primary_name} avatar" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.doughmination.win/fronting" />
+    <meta property="og:locale" content="en_GB" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="{title}" />
+    <meta name="twitter:description" content="{description}" />
+    <meta name="twitter:image" content="{primary_avatar}" />
+    <meta name="twitter:image:alt" content="{primary_name} avatar" />
+    
+    <!-- Structured Data (Schema.org JSON-LD) -->
+    {structured_data}
+    
+    <!-- Breadcrumb Structured Data -->
+    <script type="application/ld+json">
+    {{
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {{
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://www.doughmination.win/"
+        }},
+        {{
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Current Fronters",
+          "item": "https://www.doughmination.win/fronting"
+        }}
+      ]
+    }}
+    </script>
+</head>
+"""
+        
+        # Replace the head section
+        html_content = re.sub(
+            r"<head>.*?</head>",
+            meta_head,
+            html_content,
+            flags=re.DOTALL
+        )
+        
+        return HTMLResponse(content=html_content)
+        
+    except Exception as e:
+        print(f"Error serving fronting page: {e}")
+        import traceback
+        traceback.print_exc()
+        return FileResponse(STATIC_DIR / "index.html")
+
+
 @app.get("/{member_name}")
 async def serve_member_page(member_name: str, request: Request):
     """Serve member page with dynamic meta tags for crawlers and enhanced SEO"""
