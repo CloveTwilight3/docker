@@ -674,18 +674,18 @@ export default function Index() {
                           <div key={member.id || `${member.name}-${index}`} className="flex flex-col items-center relative">
                             {/* Status Bubble - Thought Bubble Style */}
                             {member.status && (
-                              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
-                                <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[140px]">
+                              <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-20">
+                                <div className="relative bg-card border-2 border-border rounded-[30px] px-3 py-1.5 shadow-lg max-w-[140px]">
                                   <div className="flex items-center gap-1.5">
                                     {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
                                     <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
                                   </div>
-                                  {/* Thought bubble circles - staggered vertically */}
-                                  <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2">
-                                    <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
+                                  {/* Thought bubble circles - staggered diagonally toward avatar */}
+                                  <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 translate-x-2">
+                                    <div className="w-2.5 h-2.5 bg-card border-2 border-border rounded-full shadow-md"></div>
                                   </div>
-                                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 translate-x-1">
-                                    <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
+                                  <div className="absolute -bottom-7 left-1/2 transform -translate-x-1/2 translate-x-3">
+                                    <div className="w-1.5 h-1.5 bg-card border border-border rounded-full shadow-sm"></div>
                                   </div>
                                 </div>
                               </div>
@@ -809,18 +809,18 @@ export default function Index() {
                         >
                           {/* Status Bubble - Thought Bubble Style */}
                           {member.status && (
-                            <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-20">
-                              <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[130px]">
+                            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-20">
+                              <div className="relative bg-card border-2 border-border rounded-[30px] px-3 py-1.5 shadow-lg max-w-[130px]">
                                 <div className="flex items-center gap-1.5">
                                   {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
                                   <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
                                 </div>
-                                {/* Thought bubble circles - staggered vertically */}
-                                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2">
-                                  <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
+                                {/* Thought bubble circles - staggered diagonally toward avatar */}
+                                <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 translate-x-2">
+                                  <div className="w-2.5 h-2.5 bg-card border-2 border-border rounded-full shadow-md"></div>
                                 </div>
-                                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 translate-x-1">
-                                  <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
+                                <div className="absolute -bottom-7 left-1/2 transform -translate-x-1/2 translate-x-3">
+                                  <div className="w-1.5 h-1.5 bg-card border border-border rounded-full shadow-sm"></div>
                                 </div>
                               </div>
                             </div>
