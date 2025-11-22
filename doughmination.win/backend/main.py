@@ -278,6 +278,9 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint with improved error handling and connection management
     """
+
+    manager = ConnectionManager()
+
     # Accept the WebSocket connection first
     await manager.connect(websocket, "all")
     
