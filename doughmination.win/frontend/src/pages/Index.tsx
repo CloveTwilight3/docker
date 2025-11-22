@@ -12,6 +12,7 @@ interface Member {
   display_name?: string;
   avatar_url?: string;
   pronouns?: string;
+  color?: string | null;
   tags?: string[];
   status?: {
     text: string;
@@ -58,50 +59,80 @@ export default function Index() {
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [wsConnected, setWsConnected] = useState(false);
 
-  // WebSocket connection
+  // WebSocket connection with improved reconnection logic
   useEffect(() => {
     let ws: WebSocket | null = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
     let heartbeatInterval: NodeJS.Timeout | null = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 10;
 
     const connectWebSocket = () => {
       try {
+        // Clear any existing connection
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
+
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws`;
 
-        console.log('Connecting to WebSocket:', wsUrl);
+        console.log('🔌 Connecting to WebSocket:', wsUrl);
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
-          console.log('WebSocket connected');
+          console.log('✅ WebSocket connected');
           setWsConnected(true);
+          reconnectAttempts = 0;
 
-          // Send heartbeat every 30 seconds
+          // Send initial subscription message
+          ws!.send('subscribe');
+
+          // Clear any existing heartbeat
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+          }
+
+          // Send heartbeat every 25 seconds (before typical 30s timeout)
           heartbeatInterval = setInterval(() => {
             if (ws?.readyState === WebSocket.OPEN) {
+              // console.log('💓 Sending heartbeat ping');
               ws.send('ping');
             }
-          }, 30000);
+          }, 25000);
         };
 
         ws.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data);
-            console.log('WebSocket message received:', message);
+            console.log('📩 WebSocket message received:', message.type);
 
             switch (message.type) {
+              case 'connection_established':
+                console.log('✅ Connection established:', message.message);
+                break;
+
+              case 'subscribed':
+                console.log('✅ Subscribed to updates');
+                break;
+
+              case 'keepalive':
+                console.log('💓 Keepalive received');
+                break;
+
               case 'fronting_update':
-                console.log('Fronting update received');
+                console.log('👥 Fronting update received');
                 setFronting(message.data);
                 break;
 
               case 'mental_state_update':
-                console.log('Mental state update received');
+                console.log('🧠 Mental state update received');
                 setSystemInfo(prev => prev ? { ...prev, mental_state: message.data } : null);
                 break;
 
               case 'members_update':
-                console.log('Members update received');
+                console.log('📋 Members update received');
                 if (message.data?.members) {
                   const sortedMembers = [...message.data.members].sort((a: Member, b: Member) => {
                     const nameA = (a.display_name || a.name).toLowerCase();
@@ -120,38 +151,54 @@ export default function Index() {
                 break;
 
               case 'force_refresh':
-                console.log('Force refresh received from admin');
+                console.log('🔄 Force refresh received from admin');
                 window.location.reload();
                 break;
 
               default:
-                console.log('Unknown message type:', message.type);
+                console.log('❓ Unknown message type:', message.type);
             }
           } catch (err) {
-            console.error('Error parsing WebSocket message:', err);
+            // Handle non-JSON messages (like "pong")
+            if (event.data === 'pong') {
+              // console.log('💓 Received pong');
+            } else {
+              console.error('❌ Error parsing WebSocket message:', err);
+            }
           }
         };
 
         ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
+          console.error('❌ WebSocket error:', error);
+          setWsConnected(false);
         };
 
-        ws.onclose = () => {
-          console.log('WebSocket disconnected');
+        ws.onclose = (event) => {
+          console.log('🔌 WebSocket disconnected. Code:', event.code, 'Reason:', event.reason || 'No reason provided');
           setWsConnected(false);
 
+          // Clear heartbeat
           if (heartbeatInterval) {
             clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
           }
 
-          // Attempt to reconnect after 3 seconds
-          reconnectTimeout = setTimeout(() => {
-            console.log('Attempting to reconnect WebSocket...');
-            connectWebSocket();
-          }, 3000);
+          // Attempt to reconnect with exponential backoff
+          if (reconnectAttempts < maxReconnectAttempts) {
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+            console.log(`🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+            
+            reconnectTimeout = setTimeout(() => {
+              reconnectAttempts++;
+              connectWebSocket();
+            }, delay);
+          } else {
+            console.error('❌ Max reconnection attempts reached. Please refresh the page.');
+          }
         };
       } catch (err) {
-        console.error('Error creating WebSocket:', err);
+        console.error('❌ Error creating WebSocket:', err);
+        setWsConnected(false);
       }
     };
 
@@ -159,6 +206,7 @@ export default function Index() {
 
     // Cleanup on unmount
     return () => {
+      console.log('🧹 Cleaning up WebSocket connection');
       if (heartbeatInterval) {
         clearInterval(heartbeatInterval);
       }
@@ -244,7 +292,7 @@ export default function Index() {
         setCurrentUser(null);
       }
     } catch (error) {
-      console.error('Initialization error:', error);
+      console.error('Auth check error:', error);
       setLoggedIn(false);
       setIsAdmin(false);
       setCurrentUser(null);
@@ -362,6 +410,15 @@ export default function Index() {
     // Check direct fronting
     return fronting.members.some(m => m.id === memberId || m.name === memberName);
   }, [fronting]);
+
+  // Helper function to normalize color values from PluralKit
+  const normalizeColor = (color: string | null | undefined): string | null => {
+    if (!color) return null;
+    // If it's already got a #, return as-is
+    if (color.startsWith('#')) return color;
+    // Add # prefix to hex colors from PluralKit
+    return `#${color}`;
+  };
 
   // Mental state helper functions
   const getMentalStateLabel = (level: string) => {
@@ -519,6 +576,15 @@ export default function Index() {
                     )}
                     <li>
                       <Link
+                        to="/admin/metrics"
+                        className="block w-full px-4 py-3 rounded-lg text-sm text-center transition-all font-comic bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
+                        onClick={toggleMenu}
+                      >
+                        Metrics
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
                         to="/admin/user"
                         className="block w-full px-4 py-3 rounded-lg text-sm text-center transition-all font-comic bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
                         onClick={toggleMenu}
@@ -600,60 +666,74 @@ export default function Index() {
                       Currently {fronting.members.length > 1 ? 'Co-fronting' : 'Fronting'}
                     </h2>
                     <div className="flex flex-wrap gap-4 justify-center">
-                      {fronting.members.map((member, index) => (
-                        <div key={member.id || `${member.name}-${index}`} className="flex flex-col items-center relative">
-                          {/* Status Bubble - Thought Bubble Style */}
-                          {member.status && (
-                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
-                              <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[140px]">
-                                <div className="flex items-center gap-1.5">
-                                  {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
-                                  <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
+                      {fronting.members.map((member, index) => {
+                        const memberColor = normalizeColor((member as any).color);
+                        const borderColor = memberColor || 'rgb(var(--primary))';
+                        
+                        return (
+                          <div key={member.id || `${member.name}-${index}`} className="flex flex-col items-center relative">
+                            {/* Status Bubble - Thought Bubble Style */}
+                            {member.status && (
+                              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+                                <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[140px]">
+                                  <div className="flex items-center gap-1.5">
+                                    {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
+                                    <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
+                                  </div>
+                                  {/* Thought bubble circles - staggered vertically */}
+                                  <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2">
+                                    <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
+                                  </div>
+                                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 translate-x-1">
+                                    <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
+                                  </div>
                                 </div>
-                                {/* Thought bubble circles */}
-                                <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
-                                  <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
-                                  <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          <Link to={`/${member.name}`}>
-                            <div className="relative">
-                              <img
-                                src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
-                                alt={member.display_name || member.name}
-                                className="w-16 h-16 rounded-full object-cover border-2 border-border hover:border-primary transition-colors cursor-pointer"
-                                loading="lazy"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
-                                }}
-                              />
-                            </div>
-                          </Link>
-                          <div className="mt-2 text-center max-w-[120px]">
-                            <Link
-                              to={`/${member.name}`}
-                              className="font-comic font-semibold text-sm text-primary hover:text-primary/80 transition-colors block"
-                            >
-                              {member.display_name || member.name || "Unknown"}
-                            </Link>
-
-                            {member.tags && member.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1 justify-center">
-                                {[...member.tags].sort((a, b) => a.localeCompare(b)).map((tag, tagIndex) => (
-                                  <span
-                                    key={tagIndex}
-                                    className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-comic"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
                               </div>
                             )}
+                            <Link to={`/${member.name}`}>
+                              <div className="relative">
+                                <img
+                                  src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
+                                  alt={member.display_name || member.name}
+                                  className="w-16 h-16 rounded-full object-cover border-[3px] transition-all cursor-pointer hover:scale-105"
+                                  style={{
+                                    borderColor: borderColor,
+                                    boxShadow: `0 0 12px ${borderColor}40`
+                                  }}
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
+                                  }}
+                                />
+                              </div>
+                            </Link>
+                            <div className="mt-2 text-center max-w-[120px]">
+                              <Link
+                                to={`/${member.name}`}
+                                className="font-comic font-semibold text-sm transition-colors block"
+                                style={{
+                                  color: memberColor || 'rgb(var(--primary))'
+                                }}
+                              >
+                                {member.display_name || member.name || "Unknown"}
+                              </Link>
+
+                              {member.tags && member.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1 justify-center">
+                                  {[...member.tags].sort((a, b) => a.localeCompare(b)).map((tag, tagIndex) => (
+                                    <span
+                                      key={tagIndex}
+                                      className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-comic"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -716,8 +796,17 @@ export default function Index() {
                   <div className="member-grid" style={{ paddingTop: '3rem' }}>
                     {filteredMembers.map((member) => {
                       const isFronting = isMemberFronting(member.id, member.name);
+                      const memberColor = normalizeColor((member as any).color);
+                      const borderColor = memberColor || 'rgb(var(--primary))';
+                      
                       return (
-                        <div key={member.id} className={`member-grid-item ${isFronting ? 'fronting-glow' : ''} relative`}>
+                        <div 
+                          key={member.id} 
+                          className={`member-grid-item ${isFronting ? 'fronting-glow' : ''} relative`}
+                          style={{
+                            '--member-color': borderColor,
+                          } as React.CSSProperties & { '--member-color': string }}
+                        >
                           {/* Status Bubble - Thought Bubble Style */}
                           {member.status && (
                             <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-20">
@@ -726,9 +815,11 @@ export default function Index() {
                                   {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
                                   <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
                                 </div>
-                                {/* Thought bubble circles */}
-                                <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
+                                {/* Thought bubble circles - staggered vertically */}
+                                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2">
                                   <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
+                                </div>
+                                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 translate-x-1">
                                   <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
                                 </div>
                               </div>
@@ -740,13 +831,22 @@ export default function Index() {
                                 <img
                                   src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
                                   alt={member.display_name || member.name}
-                                  className="w-16 h-16 mx-auto rounded-full object-cover mb-2 border-2 border-border"
+                                  className="w-16 h-16 mx-auto rounded-full object-cover mb-2 border-[3px] transition-all hover:scale-105 member-avatar"
+                                  style={{
+                                    borderColor: borderColor,
+                                    boxShadow: `0 0 12px ${borderColor}40`
+                                  }}
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
                                   }}
                                 />
                               </div>
-                              <h3 className="font-comic font-semibold text-sm text-card-foreground">
+                              <h3 
+                                className="font-comic font-semibold text-sm transition-colors"
+                                style={{
+                                  color: memberColor || 'rgb(var(--card-foreground))'
+                                }}
+                              >
                                 {member.display_name || member.name}
                               </h3>
                               {member.pronouns && (
@@ -838,6 +938,7 @@ export default function Index() {
           </a>
         </p>
       </footer>
+
       {/* SEO Content Section - Hidden visually but readable by search engines */}
       <section className="sr-only" aria-label="About Doughmination System">
         <h1>Doughmination System® - Real-Time Plural System Tracker</h1>

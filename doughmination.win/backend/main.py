@@ -270,7 +270,87 @@ async def favicon():
     raise HTTPException(status_code=404, detail="Favicon not found")
 
 # ============================================================================
-# WEBSOCKET CONNECTION MANAGER
+# WEBSOCKET ENDPOINT
+# ============================================================================
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint with improved error handling and connection management
+    """
+    # Accept the WebSocket connection first
+    await manager.connect(websocket, "all")
+    
+    # Send initial connection confirmation
+    try:
+        await websocket.send_json({
+            "type": "connection_established",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "message": "WebSocket connected successfully"
+        })
+        print(f"WebSocket client connected from {websocket.client}")
+    except Exception as e:
+        print(f"Error sending connection confirmation: {e}")
+        manager.disconnect(websocket, "all")
+        return
+    
+    try:
+        while True:
+            # Keep the connection alive and handle messages
+            try:
+                # Use asyncio.wait_for to add timeout protection
+                data = await asyncio.wait_for(
+                    websocket.receive_text(),
+                    timeout=60.0  # 60 second timeout
+                )
+                
+                # Handle different message types
+                if data == "ping":
+                    await websocket.send_text("pong")
+                    print("Received ping, sent pong")
+                elif data == "subscribe":
+                    # Client wants to subscribe to updates
+                    await websocket.send_json({
+                        "type": "subscribed",
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    })
+                    print("Client subscribed to updates")
+                else:
+                    # Log unknown messages
+                    print(f"Received WebSocket message: {data}")
+                    
+            except asyncio.TimeoutError:
+                # Send keepalive ping
+                try:
+                    await websocket.send_json({
+                        "type": "keepalive",
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    })
+                except Exception:
+                    print("Connection lost during keepalive")
+                    break
+                    
+            except WebSocketDisconnect:
+                print("Client disconnected")
+                break
+                
+            except Exception as recv_error:
+                print(f"Error receiving message: {recv_error}")
+                break
+                
+    except WebSocketDisconnect:
+        print("WebSocket disconnected normally")
+    except Exception as e:
+        print(f"WebSocket error in main loop: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        manager.disconnect(websocket, "all")
+        print("WebSocket connection closed and cleaned up")
+
+
+# ============================================================================
+# IMPROVED CONNECTION MANAGER
 # ============================================================================
 
 class ConnectionManager:
@@ -281,21 +361,28 @@ class ConnectionManager:
         }
         # Use weakref to prevent memory leaks
         self._weak_connections = weakref.WeakSet()
+        self._connection_lock = asyncio.Lock()
 
     async def connect(self, websocket: WebSocket, group: str = "all"):
+        """Connect a WebSocket client to a group"""
         await websocket.accept()
-        self.active_connections[group].add(websocket)
-        self._weak_connections.add(websocket)
+        
+        async with self._connection_lock:
+            self.active_connections[group].add(websocket)
+            self._weak_connections.add(websocket)
+            
         print(f"Client connected to group: {group}. Total connections: {len(self.active_connections[group])}")
 
     def disconnect(self, websocket: WebSocket, group: str = "all"):
-        self.active_connections[group].discard(websocket)
+        """Disconnect a WebSocket client from all groups"""
         # Clean up from all groups when disconnecting
-        for group_set in self.active_connections.values():
+        for group_name, group_set in self.active_connections.items():
             group_set.discard(websocket)
-        print(f"Client disconnected from group: {group}. Remaining connections: {len(self.active_connections[group])}")
+            
+        print(f"Client disconnected. Remaining connections in 'all': {len(self.active_connections['all'])}")
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
+        """Send a message to a specific client"""
         try:
             await websocket.send_text(message)
         except Exception as e:
@@ -305,13 +392,28 @@ class ConnectionManager:
 
     async def broadcast(self, message: str, group: str = "all"):
         """Broadcast message to all connections in a group"""
+        if group not in self.active_connections:
+            print(f"Warning: Group '{group}' not found")
+            return
+            
         disconnected = set()
+        connections = list(self.active_connections[group])
         
-        for connection in self.active_connections[group].copy():
+        print(f"Broadcasting to {len(connections)} clients in group '{group}'")
+        
+        for connection in connections:
             try:
                 await connection.send_text(message)
             except WebSocketDisconnect:
+                print(f"Client disconnected during broadcast")
                 disconnected.add(connection)
+            except RuntimeError as e:
+                if "WebSocket is not connected" in str(e):
+                    print(f"Client connection lost")
+                    disconnected.add(connection)
+                else:
+                    print(f"Runtime error broadcasting: {e}")
+                    disconnected.add(connection)
             except Exception as e:
                 print(f"Error broadcasting to client: {e}")
                 disconnected.add(connection)
@@ -319,91 +421,13 @@ class ConnectionManager:
         # Clean up disconnected clients
         for conn in disconnected:
             self.disconnect(conn, group)
+        
+        print(f"Broadcast complete. Removed {len(disconnected)} dead connections")
 
     async def broadcast_json(self, data: dict, group: str = "all"):
         """Broadcast JSON data to all connections in a group"""
         message = json.dumps(data)
         await self.broadcast(message, group)
-            
-    async def broadcast_to_interested_clients(self, member_ids: List[str], message_type: str, data: dict):
-        """
-        Broadcast a message only to clients who are interested in specific members
-        This is useful for sending updates about specific cofronts
-        """
-        message = {
-            "type": message_type,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "data": data or {},
-            "related_members": member_ids
-        }
-        
-        json_message = json.dumps(message)
-        
-        # For now, we'll broadcast to all authenticated clients
-        # In the future, you could implement a subscription system
-        # where clients subscribe to updates about specific members
-        for connection in self.active_connections["authenticated"].copy():
-            try:
-                await connection.send_text(json_message)
-            except WebSocketDisconnect:
-                self.disconnect(connection, "authenticated")
-            except Exception as e:
-                print(f"Error broadcasting to client: {e}")
-                self.disconnect(connection, "authenticated")
-
-# Create a global connection manager instance
-manager = ConnectionManager()
-
-# ============================================================================
-# WEBSOCKET ENDPOINT
-# ============================================================================
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    # Accept the WebSocket connection
-    await manager.connect(websocket)
-    
-    try:
-        while True:
-            # Keep the connection alive
-            data = await websocket.receive_text()
-            
-            # You can handle different message types if needed
-            if data == "ping":
-                await websocket.send_text("pong")
-            else:
-                # Handle other message types here if needed
-                pass
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-    except Exception as e:
-        print(f"WebSocket error: {e}")
-        manager.disconnect(websocket)
-
-# ============================================================================
-# WEBSOCKET BROADCAST HELPERS
-# ============================================================================
-
-async def broadcast_frontend_update(data_type: str, data: dict = None):
-    """Broadcast an update to all connected clients"""
-    message = {
-        "type": data_type,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "data": data or {}
-    }
-    await manager.broadcast_json(message)
-
-async def broadcast_fronting_update(fronters_data: dict):
-    """Broadcast fronting member changes"""
-    await broadcast_frontend_update("fronting_update", fronters_data)
-
-async def broadcast_mental_state_update(mental_state_data: dict):
-    """Broadcast mental state changes"""
-    await broadcast_frontend_update("mental_state_update", mental_state_data)
-
-async def broadcast_member_update(members_data: list):
-    """Broadcast member list changes"""
-    await broadcast_frontend_update("members_update", {"members": members_data})
 
 # ============================================================================
 # MENTAL STATE API ENDPOINTS
@@ -1230,7 +1254,7 @@ async def serve_member_page(member_name: str, request: Request):
     <!-- iOS Safari Meta Tags -->
     <meta name="apple-mobile-web-app-title" content="{display_name}" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="{avatar_url}" />
 
     <!-- Theme Color -->
