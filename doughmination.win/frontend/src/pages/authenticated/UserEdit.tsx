@@ -308,7 +308,7 @@ export default function UserEdit() {
           </Alert>
           <div className="mt-4 text-center">
             <Button variant="outline" asChild>
-              <Link to="/admin/user">Back to Profile</Link>
+              <Link to="/user/profile">Back to Profile</Link>
             </Button>
           </div>
         </div>
@@ -328,7 +328,7 @@ export default function UserEdit() {
             </p>
           </div>
           <Button variant="outline" asChild>
-            <Link to="/admin/user" className="font-comic">
+            <Link to="/user/profile" className="font-comic">
               Cancel
             </Link>
           </Button>

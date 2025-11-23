@@ -492,18 +492,18 @@ export default function Index() {
               <>
                 {isAdmin && (
                   <Button variant="outline" size="sm" asChild>
-                    <Link to="/admin/dashboard" className="font-comic">
+                    <Link to="/admin/dash" className="font-comic">
                       Admin Panel
                     </Link>
                   </Button>
                 )}
                 <Button variant='outline' size='sm' asChild>
-                  <Link to="/admin/metrics" className='font-comic'>
+                  <Link to="/user/metrics" className='font-comic'>
                     Metrics
                   </Link>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <Link to="/admin/user" className="font-comic">
+                  <Link to="/user/profile" className="font-comic">
                     Profile
                   </Link>
                 </Button>
@@ -513,7 +513,7 @@ export default function Index() {
               </>
             ) : (
               <Button variant="outline" size="sm" asChild>
-                <Link to="/admin/login" className="font-comic">
+                <Link to="/user/login" className="font-comic">
                   Login
                 </Link>
               </Button>
@@ -566,7 +566,7 @@ export default function Index() {
                     {isAdmin && (
                       <li>
                         <Link
-                          to="/admin/dashboard"
+                          to="/admin/dash"
                           className="block w-full px-4 py-3 rounded-lg text-sm text-center transition-all font-comic bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
                           onClick={toggleMenu}
                         >
@@ -576,7 +576,7 @@ export default function Index() {
                     )}
                     <li>
                       <Link
-                        to="/admin/metrics"
+                        to="/user/metrics"
                         className="block w-full px-4 py-3 rounded-lg text-sm text-center transition-all font-comic bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
                         onClick={toggleMenu}
                       >
@@ -585,7 +585,7 @@ export default function Index() {
                     </li>
                     <li>
                       <Link
-                        to="/admin/user"
+                        to="/user/profile"
                         className="block w-full px-4 py-3 rounded-lg text-sm text-center transition-all font-comic bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
                         onClick={toggleMenu}
                       >
@@ -607,7 +607,7 @@ export default function Index() {
                 ) : (
                   <li>
                     <Link
-                      to="/admin/login"
+                      to="/user/login"
                       className="block w-full px-4 py-3 rounded-lg text-sm text-center transition-all font-comic bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
                       onClick={toggleMenu}
                     >

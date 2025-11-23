@@ -32,8 +32,8 @@ const App = () => (
           <Route path="/fronting" element={<Index />} />
           <Route path="/" element={<Index />} />
           <Route path="/:member_id" element={<MemberDetails />} />
-          <Route path="/admin/login" element={<Login />} />
-          <Route path="/admin/dashboard" element={
+          <Route path="/user/login" element={<Login />} />
+          <Route path="/admin/dash" element={
             <ProtectedRoute adminRequired={true}>
               <AdminDashboard />
             </ProtectedRoute>
@@ -68,17 +68,17 @@ const App = () => (
               <UserManager />
             </ProtectedRoute>
           } />
-          <Route path="/admin/user" element={
+          <Route path="/user/profile" element={
             <ProtectedRoute adminRequired={false}>
               <UserProfile />
             </ProtectedRoute>
           } />
-          <Route path="/admin/metrics" element={
+          <Route path="/user/metrics" element={
             <ProtectedRoute adminRequired={false}>
               <Metrics />
             </ProtectedRoute>
           } />
-          <Route path="/admin/user/edit" element={
+          <Route path="/user/profile/edit" element={
             <ProtectedRoute adminRequired={false}>
               <UserEdit />
             </ProtectedRoute>

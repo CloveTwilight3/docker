@@ -145,6 +145,8 @@ async def login(request: Request):
         print(f"User found in database: id={existing_user.id}")
         print(f"  username='{existing_user.username}'")
         print(f"  is_admin={existing_user.is_admin}")
+        print(f"  is_owner={existing_user.is_owner}")
+        print(f"  is_pet={existing_user.is_pet}")
         print(f"  password_hash_starts_with='{existing_user.password_hash[:10]}...'")
     else:
         print(f"User NOT found in database: '{username}'")
@@ -176,6 +178,8 @@ async def login(request: Request):
         "id": user.id,
         "display_name": user.display_name,
         "admin": user.is_admin,
+        "owner": user.is_owner,
+        "pet": user.is_pet,
         "avatar_url": getattr(user, 'avatar_url', None),
         "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     }, JWT_SECRET, algorithm=ALGORITHM)
@@ -204,5 +208,7 @@ def get_user_info(user = Depends(get_current_user)):
         username=user.username,
         display_name=user.display_name,
         is_admin=user.is_admin,
+        is_owner=user.is_owner,
+        is_pet=user.is_pet,
         avatar_url=getattr(user, 'avatar_url', None)
     )

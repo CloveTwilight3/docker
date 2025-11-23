@@ -174,7 +174,7 @@ export default function UserProfile() {
             {/* Action Buttons */}
             <div className="flex gap-3 justify-center pt-4">
               <Button asChild>
-                <Link to="/admin/user/edit" className="font-comic">
+                <Link to="/user/profile/edit" className="font-comic">
                   Edit Profile
                 </Link>
               </Button>

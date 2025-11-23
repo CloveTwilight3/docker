@@ -175,7 +175,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             
             // Redirect after 2 seconds
             setTimeout(() => {
-              const redirectTo = from === "/admin/login" ? "/admin/dashboard" : from;
+              const redirectTo = from === "/admin/login" ? "/admin/dash" : from;
               navigate(redirectTo, { replace: true });
             }, 2000);
           } else {
@@ -183,7 +183,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             if (onLogin) {
               onLogin();
             }
-            const redirectTo = from === "/admin/login" ? "/admin/dashboard" : from;
+            const redirectTo = from === "/admin/login" ? "/admin/dash" : from;
             navigate(redirectTo, { replace: true });
           }
         } catch (userError) {
@@ -192,7 +192,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           if (onLogin) {
             onLogin();
           }
-          const redirectTo = from === "/admin/login" ? "/admin/dashboard" : from;
+          const redirectTo = from === "/admin/login" ? "/admin/dash" : from;
           navigate(redirectTo, { replace: true });
         }
       } else {
