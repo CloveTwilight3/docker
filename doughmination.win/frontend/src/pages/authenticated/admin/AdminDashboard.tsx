@@ -14,7 +14,6 @@ const AdminDashboard: React.FC = () => {
     { path: '/admin/mental', label: 'Mental Health', icon: '🧠', desc: 'Update mental state' },
     { path: '/admin/status', label: 'Status Manager', icon: '💬', desc: 'Set member statuses' },
     { path: '/admin/tags', label: 'Tag Manager', icon: '🏷️', desc: 'Manage member tags' },
-    { path: '/admin/users', label: 'User Manager', icon: '👥', desc: 'Manage system users' },
     { path: '/admin/endpoints', label: 'API Endpoints', icon: '🔌', desc: 'View API reference' },
   ];
 

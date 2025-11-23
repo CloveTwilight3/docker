@@ -5,16 +5,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Login from "./pages/authenticated/Login";
+import Login from "./pages/authenticated/user/Login";
 import AdminDashboard from "./pages/authenticated/admin/AdminDashboard";
-import UserProfile from "./pages/authenticated/UserProfile";
+import UserProfile from "./pages/authenticated/user/UserProfile";
 import MemberDetails from "./pages/MemberDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
-import UserEdit from "./pages/authenticated/UserEdit";
+import UserEdit from "./pages/authenticated/user/UserEdit";
 import StatusManager from "./pages/authenticated/admin/StatusManager";
 import SwitchManager from "./pages/authenticated/admin/SwitchManager";
 import MentalHealthManager from "./pages/authenticated/admin/MentalHealthManager";
-import Metrics from "./pages/authenticated/Metrics";
+import Metrics from "./pages/authenticated/user/Metrics";
 import TagManager from "./pages/authenticated/admin/TagManager";
 import Endpoints from "./pages/authenticated/admin/Endpoints";
 import UserManager from "./pages/authenticated/admin/UserManager";
@@ -63,7 +63,7 @@ const App = () => (
               <Endpoints />
             </ProtectedRoute>
           } />
-          <Route path="/admin/users" element={
+          <Route path="/owner/users" element={
             <ProtectedRoute adminRequired={true}>
               <UserManager />
             </ProtectedRoute>
